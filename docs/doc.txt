@@ -1,0 +1,49 @@
+A Discrete Control Theory (DCT) driven Deadlock Avoidance Mechanism
+(Reviewing paper on “The Theory of Deadlock Avoidance via Discrete Control”, Yin
+Wang, et al. POPL’09, ACM SIGPLAN.)
+This paper puts forth a theoretical foundation for dynamic deadlock avoidance in concurrent
+programs, especially those that employ typical mutual exclusion and synchronisation primitives.
+However, the primary goal of this paper is to provide a customised control synthesis algorithm for
+Petri nets that model multithreaded programs. The paper also throws light on the significance of two
+important factors, namely deadlock freedom (as a global program parameter) and maximal
+permissivity (i.e. the control logic postpones lock acquisitions only when nececssary to prevent
+deadlocks, permitting maximal runtime concurrency).
+Petri nets are bipartite directed graphs that typically make use of three major constructs: circles
+representing states (or resources), solid bars as transitions, and tokens as for marking states. Arcs
+connecting states from a given transition represent event outcomes, while the opposite represent
+pre-conditions. The paper also goes on to model four fundamental petri net models, namely
+branches, loops, fork/join, and lock/unlock.
+Overall Architecture
+Program modelling
+Control flow graphs (CFGs) are extracted from the program source code on a per-function basis.
+The objective here is to finally be able to build a complete Petri net model of the program. To
+obtaina Petri net, a state is created for each node (basic block) of the CFG. Each arc between nodes
+are substituted with a transition bar and two arcs. This way, a basic block-transition-basic block
+chain in the CFG is converted into a state-arc-transition-arc-state chain. Basic blocks that contain
+multiple lock functions are split into a sequence of mono-lock blocks. Functions that do not invoke
+lock operations are simply not considered in the modelling phase.
+Supervision based on place invariants
+Markings that are deemed illegal (violating l T M ≥ b, where l is a weight vector, M is marking, and b
+is a scalar) are avoided by control as they are illegal, while all other markings are permitted. This is
+achieved by adding a new control state to the net connecting to transitions in the net. This control
+block disables output transitions in the light of an insufficient token count. This is the basis of the
+deadlock avoidance control synthesis algorithm, eliminating deadlocks that are discovered via
+siphon analysis.
+Siphon Analysis
+To achieve the objective of deadlock avoidance in a concurrent program using SBPI, we need to
+express deadlock freedom using linear inequality specifications. For this, we define a siphon as a set
+S of statessuch that •S ⊆ S• (•S denoting the set of states with incoming transitions, and S• as the
+set of states with outgoing transitions). Intuitively, since •S ⊆ S•, if a siphon S becomes empty,
+every output transition in S• is disabled and no input transition can fire. Siphon analysis basically
+translates the problem of deadlock avoidance to the problem of avoidance of empty siphons in its
+ordinary Petri net model.
+Control Logic Synthesis Algorithm
+Input Petri net N G that models the program
+Output Augmented N G with control states added
+Step 1 Let R be the set of states representing mutex locks
+Step 2 Find all minimal siphons in N G that include at least one state in R and can become empty; if
+no siphon found, goto End
+Step 3 Add a control state for every siphon found in Step 2
+Step 4 Remove redundant control state added in Step 3; let R be the set of control states remaining;
+goto Step 2
+End Output N G with all control states added
